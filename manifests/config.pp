@@ -43,13 +43,13 @@ class selinux::config(
     }
 
     # Replace the SELinux mode
-    exec { "set-selinux-config-to-${mode}":
+    exec { "set-selinux-config-to-${mode}-A":
       user    => root,
       command => "sed -i \"s@^\\(SELINUX=\\).*@\\1${mode}@\" /etc/sysconfig/selinux",
       unless  => "grep -q \"SELINUX=${mode}\" /etc/sysconfig/selinux",
     }
 
-    exec { "set-selinux-config-to-${mode}":
+    exec { "set-selinux-config-to-${mode}-B":
       user    => root,
       command => "sed -i \"s@^\\(SELINUX=\\).*@\\1${mode}@\" /etc/sysconfig/selinux",
       unless  => "grep -q \"SELINUX=${mode}\" /etc/selinux/config",
