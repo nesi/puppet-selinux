@@ -28,9 +28,31 @@ class selinux::config(
 
   # Check to see if the mode set is valid.
   if $mode == 'enforcing' or $mode == 'permissive' or $mode == 'disabled' {
+
+    # Disable the services that protect SELinux state
+    if $mode in ['permissive','disabled']{
+      service{restorecond:
+        ensure => stopped,
+        enable => false,
+      }
+
+      service{mcstrans:
+        ensure => stopped,
+        enable => false,
+      }
+    }
+
+    # Replace the SELinux mode
     exec { "set-selinux-config-to-${mode}":
+      user    => root,
       command => "sed -i \"s@^\\(SELINUX=\\).*@\\1${mode}@\" /etc/sysconfig/selinux",
       unless  => "grep -q \"SELINUX=${mode}\" /etc/sysconfig/selinux",
+    }
+
+    exec { "set-selinux-config-to-${mode}":
+      user    => root,
+      command => "sed -i \"s@^\\(SELINUX=\\).*@\\1${mode}@\" /etc/sysconfig/selinux",
+      unless  => "grep -q \"SELINUX=${mode}\" /etc/selinux/config",
     }
 
     case $mode {
