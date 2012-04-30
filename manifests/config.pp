@@ -29,20 +29,36 @@ class selinux::config(
   # Check to see if the mode set is valid.
   if $mode == 'enforcing' or $mode == 'permissive' or $mode == 'disabled' {
 
-    # Disable the services that protect SELinux state
-    if $mode in ['permissive','disabled']{
-      service{restorecond:
-        ensure => stopped,
-        enable => false,
-      }
+  # Change mode _first_
+    case $mode {
+      permissive,disabled: { 
+        $sestatus = '0'
+        if $mode == 'disabled' and $::selinux_current_mode == 'permissive' {
+          notice('A reboot is required to fully disable SELinux. SELinux will operate in Permissive mode until a reboot')
+        }
 
-      service{mcstrans:
-        ensure => stopped,
-        enable => false,
+        service{restorecond:
+         ensure => stopped,
+          enable => false,
+         }
+
+        service{mcstrans:
+         ensure => stopped,
+          enable => false,
+        }
+
+      }
+      enforcing: {
+        $sestatus = '1'
       }
     }
 
-    # Replace the SELinux mode
+    exec { "change-selinux-status-to-${mode}":
+      command => "echo ${sestatus} > /selinux/enforce",
+      unless  => "grep -q '${sestatus}' /selinux/enforce",
+    }
+
+    # Replace the SELinux mod in config files
     exec { "set-selinux-config-to-${mode}-A":
       user    => root,
       command => "sed -i \"s@^\\(SELINUX=\\).*@\\1${mode}@\" /etc/sysconfig/selinux",
@@ -55,22 +71,6 @@ class selinux::config(
       unless  => "grep -q \"SELINUX=${mode}\" /etc/selinux/config",
     }
 
-    case $mode {
-      permissive,disabled: { 
-        $sestatus = '0'
-        if $mode == 'disabled' and $::selinux_current_mode == 'permissive' {
-          notice('A reboot is required to fully disable SELinux. SELinux will operate in Permissive mode until a reboot')
-        }
-      }
-      enforcing: {
-        $sestatus = '1'
-      }
-    }
-
-    exec { "change-selinux-status-to-${mode}":
-      command => "echo ${sestatus} > /selinux/enforce",
-      unless  => "grep -q '${sestatus}' /selinux/enforce",
-    }
   } else {
     fail("Invalid mode specified for SELinux: ${mode}")
   }
