@@ -58,14 +58,7 @@ class selinux::config(
       unless  => "grep -q '${sestatus}' /selinux/enforce",
     }
 
-    # Replace the SELinux mod in config files
-    exec { "set-selinux-config-to-${mode}-A":
-      user    => root,
-      command => "sed -i \"s@^\\(SELINUX=\\).*@\\1${mode}@\" /etc/sysconfig/selinux",
-      unless  => "grep -q \"SELINUX=${mode}\" /etc/sysconfig/selinux",
-    }
-
-    exec { "set-selinux-config-to-${mode}-B":
+    exec { "set-selinux-config-to-${mode}":
       user    => root,
       command => "sed -i \"s@^\\(SELINUX=\\).*@\\1${mode}@\" /etc/sysconfig/selinux",
       unless  => "grep -q \"SELINUX=${mode}\" /etc/selinux/config",
