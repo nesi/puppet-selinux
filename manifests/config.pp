@@ -38,12 +38,12 @@ class selinux::config(
         }
 
         service{restorecond:
-         ensure => stopped,
+          ensure => stopped,
           enable => false,
-         }
+        }
 
         service{mcstrans:
-         ensure => stopped,
+          ensure => stopped,
           enable => false,
         }
 
@@ -54,13 +54,14 @@ class selinux::config(
     }
 
     exec { "change-selinux-status-to-${mode}":
+      user    => root,
       command => "echo ${sestatus} > /selinux/enforce",
       unless  => "grep -q '${sestatus}' /selinux/enforce",
     }
 
     exec { "set-selinux-config-to-${mode}":
       user    => root,
-      command => "sed -i \"s@^\\(SELINUX=\\).*@\\1${mode}@\" /etc/sysconfig/selinux",
+      command => "sed -i \"s@^\\(SELINUX=\\).*@\\1${mode}@\" /etc/selinux/config",
       unless  => "grep -q \"SELINUX=${mode}\" /etc/selinux/config",
     }
 
