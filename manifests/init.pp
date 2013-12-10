@@ -8,7 +8,7 @@
 #
 # Actions:
 #  This module will configure SELinux and/or deploy SELinux based modules to running
-#  system. 
+#  system.
 #
 # Requires:
 #  - Class[stdlib]. This is Puppet Labs standard library to include additional methods for use within Puppet. [https://github.com/puppetlabs/puppetlabs-stdlib]
@@ -16,20 +16,12 @@
 # Sample Usage:
 #  include selinux
 #
-class selinux(
-  $mode = 'permissive'
-) {
-  if $operatingsystem in ['RHEL','CentOS'] {
-    include stdlib
-    include selinux::params
+class selinux (
+  $mode = $::selinux::params::mode,
+) inherits selinux::params {
 
-    anchor { 'selinux::begin': }
-    -> class { 'selinux::config':
-         mode => $mode,
-    }
-    -> anchor { 'selinux::end': }
-  }
-  else {
-    warning {"SELinux control is not configured for $operatingsystem":}
-  }
+  include stdlib
+
+  class { 'selinux::package': } ->
+  class { 'selinux::config': }
 }
